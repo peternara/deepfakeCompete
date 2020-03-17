@@ -22,26 +22,32 @@ def main(args):
     TRAIN_DIR = TRAIN_DIR[np.where([len(x) <= 2 for x in TRAIN_DIR])[0].astype(np.int32)]
 
     train_dir = ['/data/songzhu/deepfake/00/dfdc_train_part_0']
-    face_dir = ['/data/songzhu/deepfake/00/faces']
+    face_dir = ['/data/songzhu/deepfake/00/frame']
+    if not os.path.isdir(face_dir[0]):
+        os.mkdir(face_dir[0])
     for foldername in TRAIN_DIR:
         if foldername == '00':
             continue
         temp = "/data/songzhu/deepfake/" + foldername + '/dfdc_train_part_' + foldername.lstrip('0')
         train_dir.append(temp)
-        temp = "/data/songzhu/deepfake/" + foldername + "/faces/"
+        temp = "/data/songzhu/deepfake/" + foldername + "/frame/"
+        if not os.path.isdir(temp):
+            os.mkdir(temp)
         face_dir.append(temp)
 
-    SCALE = 0.8
+    SCALE = 0.5
     N_FRAMES = 50
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('Running on device: {}, using {} GPUs'.format(args.gpu, args.n_gpus))
 
     # Load face detector
-    face_detector = MTCNN(margin=80, keep_all=True, factor=0.8, device=device).eval()
+    face_detector = MTCNN(margin=100, keep_all=True, factor=0.8, device=device).eval()
     # Define face extractor
     face_extractor = FaceExtractor(detector=face_detector, n_frames=N_FRAMES, resize=SCALE)
+    face_extractor = FaceExtractor(detector=None, n_frames=N_FRAMES, resize=SCALE)
     # Get the paths of all train videos
+
     count = 0
     # To Do:
     # Sample differently to get rid off the imbalance problem
@@ -78,13 +84,13 @@ def main(args):
                 label = metadata[mp4file[0]]['label']
 
                 if label == 'FAKE':
-                    N_FRAMES = 0
+                    N_FRAMES = 5
                 else:
-                    N_FRAMES = 50
+                    N_FRAMES = 25
 
                 file_name = path.split('/')[-1]
 
-                face_dir = trainfiles[0:25] + "/faces"
+                face_dir = trainfiles[0:25] + "/frame"
                 if not os.path.isdir(face_dir):
                     os.mkdir(face_dir)
 
@@ -114,4 +120,3 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(x) for x in opt_gpus)
 
     main(args)
-
